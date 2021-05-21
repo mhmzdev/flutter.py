@@ -1,0 +1,239 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_py/controller/eventController.dart';
+
+
+// Controllers
+final titleTextController = TextEditingController();
+final placeTextController = TextEditingController();
+final communityTextController = TextEditingController();
+final dateTextController = TextEditingController();
+final timeTextController = TextEditingController();
+final categoryTextController = TextEditingController();
+final modeTextController = TextEditingController();
+final countryTextController = TextEditingController();
+final cityTextController = TextEditingController();
+
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        body: Row(
+          children: [
+            Expanded(
+              child: AddEventForm(),
+            ),
+            Expanded(
+              child: DisplayEvent(),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AddEventForm extends StatelessWidget {
+  _clearControllers() {
+    titleTextController.clear();
+    placeTextController.clear();
+    communityTextController.clear();
+    dateTextController.clear();
+    timeTextController.clear();
+    categoryTextController.clear();
+    modeTextController.clear();
+    countryTextController.clear();
+    cityTextController.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Size screenSize = MediaQuery.of(context).size;
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          CustomTextField(
+            screenSize: screenSize,
+            controller: titleTextController,
+            hintText: "Enter Title",
+          ),
+          CustomTextField(
+            screenSize: screenSize,
+            controller: placeTextController,
+            hintText: "Enter Place",
+          ),
+          CustomTextField(
+            screenSize: screenSize,
+            controller: communityTextController,
+            hintText: "Enter Community Name",
+          ),
+          CustomTextField(
+            screenSize: screenSize,
+            controller: dateTextController,
+            hintText: "yyyy-mm-dd",
+          ),
+          CustomTextField(
+            screenSize: screenSize,
+            controller: timeTextController,
+            hintText: "hh:mm:ss",
+          ),
+          CustomTextField(
+            screenSize: screenSize,
+            controller: categoryTextController,
+            hintText: "Hands-on/Workshop/Bootcamp...",
+          ),
+          CustomTextField(
+            screenSize: screenSize,
+            controller: modeTextController,
+            hintText: "Physical/Online",
+          ),
+          CustomTextField(
+            screenSize: screenSize,
+            controller: countryTextController,
+            hintText: "Enter Country",
+          ),
+          CustomTextField(
+            screenSize: screenSize,
+            controller: cityTextController,
+            hintText: "Enter City ",
+          ),
+          SizedBox(
+            height: screenSize.height * 0.055,
+            width: screenSize.width * 0.3,
+            child: MaterialButton(
+              color: Colors.red[800],
+              onPressed: () {
+                EventController().postEvent(
+                  titleTextController.text.trim(),
+                  placeTextController.text.trim(),
+                  communityTextController.text.trim(),
+                  dateTextController.text.trim(),
+                  timeTextController.text.trim(),
+                  categoryTextController.text.trim(),
+                  modeTextController.text.trim(),
+                  countryTextController.text.trim(),
+                  cityTextController.text.trim(),
+                );
+                _clearControllers();
+              },
+              child: Text(
+                "Add Event",
+                style: TextStyle(
+                  color: Colors.white,
+                  letterSpacing: 1.2,
+                  fontSize: 16.0,
+                ),
+              ),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class DisplayEvent extends StatefulWidget {
+  @override
+  _DisplayEventState createState() => _DisplayEventState();
+}
+
+class _DisplayEventState extends State<DisplayEvent> {
+  _autoRefresh() {
+    Future.delayed(
+        Duration(
+          seconds: 2,
+        ), () {
+      setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20.0),
+      child: FutureBuilder(
+        future: EventController().getEvents(),
+        builder: (BuildContext context, AsyncSnapshot snapshot) {
+          if (snapshot.hasData) {
+            return ListView.builder(
+              itemCount: snapshot.data.events.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  child: ListTile(
+                    trailing: IconButton(
+                      onPressed: () {
+                        EventController()
+                            .deleteEvent(snapshot.data.events[index].id);
+                        _autoRefresh();
+                      },
+                      icon: Icon(
+                        Icons.delete,
+                        color: Colors.red[900],
+                      ),
+                    ),
+                    leading: Text(
+                      snapshot.data.events[index].id.toString(),
+                    ),
+                    title: Text(
+                      snapshot.data.events[index].title,
+                    ),
+                    subtitle: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          snapshot.data.events[index].date,
+                        ),
+                        Text(
+                          snapshot.data.events[index].time,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          } else {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+        },
+      ),
+    );
+  }
+}
+
+// Custom Widget
+class CustomTextField extends StatelessWidget {
+  const CustomTextField({
+    Key key,
+    @required this.screenSize,
+    @required this.controller,
+    @required this.hintText,
+  }) : super(key: key);
+
+  final Size screenSize;
+  final TextEditingController controller;
+  final String hintText;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: screenSize.width * 0.3,
+      height: screenSize.height * 0.05,
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: TextStyle(fontSize: 12.0, letterSpacing: 1.5),
+          border: OutlineInputBorder(),
+        ),
+      ),
+    );
+  }
+}
